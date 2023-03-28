@@ -1,0 +1,72 @@
+server:
+  port: 9000
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka
+  instance:
+    prefer-ip-address: true
+
+spring:
+  application:
+    name: js-delivery-gateway
+  cloud:
+    gateway:
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowed-headers: "*"
+            allowedOrigins: "http://localhost:5173"
+            allowedMethods: "*"
+      discovery:
+        locator:
+          enabled: true
+      routes:
+        - id: js-delivery-identity-service
+          uri: lb://js-delivery-identity-service
+          filters:
+            - PrefixPath=/api/v1
+            - RewritePath=/personal-addresses/(?<segment>.*),/addresses/$\{segment}
+            - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+          predicates:
+            - Path=/login/**
+
+        - id: js-delivery-identity-service
+          uri: lb://js-delivery-identity-service
+          filters:
+            - PrefixPath=/api/v1
+            - RewritePath=/personal-addresses/(?<segment>.*),/addresses/$\{segment}
+            - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+            - FactoryFilter
+          predicates:
+            - Path=/users/**,
+              /persons/**,
+              /personal-addresses/**,
+              /delivery-men/**,
+              /delivery-status/**,
+              /roles/**,
+              /clients/**
+  
+        - id: js-delivery-service
+          uri: lb://js-delivery-service
+          filters:
+            - PrefixPath=/api/v1
+            - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+            - FactoryFilter
+          predicates:
+            - Path=/products/**,
+              /categories/**,
+              /addresses/**,
+              /orders-status/**,
+              /orders-item/**,
+              /purchase-orders/**,
+              /orders-detail/**
+
+        - id: js-delivery-attachment-service
+          uri: lb://js-delivery-attachment-service
+          filters:
+            - PrefixPath=/api/v1
+            - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+          predicates:
+            - Path=/attachments/**

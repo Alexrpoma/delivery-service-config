@@ -1,0 +1,54 @@
+server:
+  port: 8080
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka
+  instance:
+    prefer-ip-address: true
+
+spring:
+  application:
+    name: js-delivery-gateway
+  cloud:
+    gateway:
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowed-headers: "*"
+            allowedOrigins: "http://localhost:5173"
+            allowedMethods:
+              - GET
+              - POST
+      discovery:
+        locator:
+          enabled: true
+      routes:
+        - id: js-delivery-identity-service
+          uri: lb://js-delivery-identity-service
+          filters:
+            - PrefixPath=/api/v1
+            - RewritePath=/personal-addresses/(?<segment>.*),/addresses/$\{segment}
+            - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+          predicates:
+            - Path=/login/**,
+              /users/**,
+              /persons/**,
+              /personal-addresses/**,
+              /delivery-men/**,
+              /delivery-status/**,
+              /roles/**
+
+        - id: js-delivery-service
+          uri: lb://js-delivery-service
+          filters:
+            - PrefixPath=/api/v1
+          predicates:
+            - Path=/products/**,
+              /categories/**,
+              /addresses/**,
+              /orders-status/**,
+              /orders-item/**,
+              /purchase-orders/**,
+              /orders-detail/**
